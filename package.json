@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "version": "yarn changeset version && yarn --mode update-lockfile",
-    "release": "yarn build && changeset tag"
+    "release": "changeset tag"
   },
   "dependencies": {
     "@changesets/cli": "^2.27.11"
