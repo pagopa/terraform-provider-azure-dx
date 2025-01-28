@@ -1,3 +1,9 @@
+<p align="center">
+    <img src="https://raw.githubusercontent.com/pagopa/.github/5ef0e41abf2d0b07d6b3ab62cc5cfda34c38822a/profile/logo.svg" width="180" height="50">
+</p>
+
+<hr>
+
 # terraform-provider-azure-dx
 
 The azure-dx Terraform provider is for Developer Experience, simplifies the creation and management of Azure resources following standardized naming conventions. This provider is maintained by the [PagoPA organization](https://github.com/pagopa) and is available at [terraform-provider-azure-dx](https://github.com/pagopa/terraform-provider-azure-dx).
@@ -166,3 +172,12 @@ output "resource_name" {
 ````
 
 **Result**: dx-d-itn-app-blob-pep-01
+
+<hr>
+
+<p align="center">
+    PagoPA S.p.A. <br>
+    <a href="https://www.pagopa.it/">Web Site</a> | <a href="https://github.com/pagopa">Official GitHub</a> | <a href="https://twitter.com/pagopa">Twitter</a> | <a href="https://www.linkedin.com/company/pagopa/">Linkedin</a> | <a href="https://www.youtube.com/channel/UCFBGOEJUPQ6t3xtZFc_UIEQ">YouTube</a> | <a href="https://www.instagram.com/pagopaspa/">Instagram</a>
+</p>
+
+<hr>
