@@ -1,6 +1,6 @@
 {
   "name": "terraform-provider-azure-dx",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "scripts": {
     "version": "yarn changeset version && yarn --mode update-lockfile",
     "release": "changeset tag"
