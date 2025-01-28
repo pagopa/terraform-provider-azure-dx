@@ -56,9 +56,9 @@ provider "dx" {
 
 |Name|Type|Required|Description|
 |:---|:---:|:---:|:---|
-|prefix|String|Yes|Two-character project prefix.|
-|environment|String|Yes|Deployment environment (d, u, or p).|
-|location|String|Yes|Deployment location (itn or weu).|
+|prefix|String|No|Two-character project prefix.|
+|environment|String|No|Deployment environment (d, u, or p).|
+|location|String|No|Deployment location (itn or weu).|
 |domain|String|No|Optional domain for naming.|
 
 ## Functions

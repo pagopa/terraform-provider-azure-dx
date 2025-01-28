@@ -3,7 +3,7 @@
 page_title: "azure-dx Provider"
 subcategory: ""
 description: |-
-  The dx provider is used to generate and manage naming of Azure resources.
+  The azure-dx Terraform provider is for Developer Experience, simplifies the creation and management of Azure resources following standardized naming conventions.
 ---
 
 # azure-dx Provider
@@ -17,7 +17,7 @@ provider "dx" {
   prefix      = "<project_prefix>" # e.g., "dx", "io"
   environment = "<environment>"    # d, u, or p (dev, uat, or prod)
   location    = "<location>"       # itn (Italy North) or weu (West Europe)
-  domain      = "<domain>"         # e.g., "test" (Optional)
+  domain      = "<domain>"         # e.g., "test"
 }
 ```
 

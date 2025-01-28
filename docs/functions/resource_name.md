@@ -48,9 +48,11 @@ resource_name(configuration map of string) string
 |domain|String|No|Optional value that specify the domain|
 |name|String|Yes|Name of the resource|
 |resource_type|String|Yes|Type of the resource (see the table below)|
-|instance_number|Integer|Yes|Instance number of the resource|
+|instance_number|Integer|Yes|Instance number of the resource (1-99)|
 
-## Resource Types
+### Resource Types
+
+The following table lists the resource types and their abbreviations used in the resource_name function:
 
 |Type|Abbreviation|
 |:---|:---:|
