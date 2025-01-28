@@ -2,7 +2,6 @@ package provider
 
 import (
 	"context"
-	"fmt"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,6 +19,8 @@ var _ provider.Provider = &dxProvider{}
 type dxProvider struct {
 	Version string
 }
+
+type dxPrefix string
 
 type dxProviderModel struct {
 	Prefix      types.String `tfsdk:"prefix"`
@@ -47,7 +48,7 @@ func (p *dxProvider) Schema(ctx context.Context, req provider.SchemaRequest, res
 		Description: "The dx provider is used to generate and manage naming of Azure resources.",
 		Attributes: map[string]schema.Attribute{
 			"prefix": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "Prefix that define the repository domain",
 				Validators: []validator.String{
 					stringvalidator.LengthBetween(2, 2),
@@ -58,14 +59,14 @@ func (p *dxProvider) Schema(ctx context.Context, req provider.SchemaRequest, res
 				Description: "The team domain name",
 			},
 			"environment": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "Environment where the resources will be deployed",
 				Validators: []validator.String{
 					stringvalidator.OneOf([]string{"d", "u", "p"}...),
 				},
 			},
 			"location": schema.StringAttribute{
-				Required:    true,
+				Optional:    true,
 				Description: "Location where the resources will be deployed",
 				Validators: []validator.String{
 					stringvalidator.OneOf([]string{"weu", "itn"}...),
@@ -109,25 +110,6 @@ func (p *dxProvider) Configure(ctx context.Context, req provider.ConfigureReques
 			"The 'location' configuration must be 'weu' or 'itn'.",
 		)
 	}
-
-	// Define the prefix value
-	var result string
-	if !config.Domain.IsNull() {
-		result = fmt.Sprintf("%s-%s-%s-%s",
-			config.Prefix.ValueString(),
-			config.Environment.ValueString(),
-			config.Location.ValueString(),
-			config.Domain.ValueString(),
-		)
-	} else {
-		result = fmt.Sprintf("%s-%s-%s",
-			config.Prefix.ValueString(),
-			config.Environment.ValueString(),
-			config.Location.ValueString(),
-		)
-	}
-
-	resp.DataSourceData = strings.ToLower(result)
 }
 
 // Resources
@@ -138,11 +120,7 @@ func (p *dxProvider) Resources(ctx context.Context) []func() resource.Resource {
 
 // DataSources
 func (p *dxProvider) DataSources(ctx context.Context) []func() datasource.DataSource {
-	return []func() datasource.DataSource{
-		func() datasource.DataSource {
-			return &prefixDataSource{}
-		},
-	}
+	return nil
 }
 
 // Functions

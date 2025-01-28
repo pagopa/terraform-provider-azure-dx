@@ -3,10 +3,11 @@ package provider
 import (
 	"context"
 	"fmt"
-	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/hashicorp/terraform-plugin-framework/function"
+	"github.com/hashicorp/terraform-plugin-framework/types"
 )
 
 var _ function.Function = &resourceNameFunction{}
@@ -25,21 +26,10 @@ func (f *resourceNameFunction) Definition(ctx context.Context, req function.Defi
 
 		// L'ordine di inserimento è questo
 		Parameters: []function.Parameter{
-			function.StringParameter{
-				Name:        "prefix",
-				Description: "The default prefix for all resources that will be created.",
-			},
-			function.StringParameter{
-				Name:        "name",
-				Description: "The resource distintive name.",
-			},
-			function.StringParameter{
-				Name:        "resource_type",
-				Description: "Resource type (app or cosmos)",
-			},
-			function.Int64Parameter{
-				Name:        "instance_number",
-				Description: "Instance number (1-99)",
+			function.MapParameter{
+				Name:        "configuration",
+				Description: "A map containing the following keys: prefix, environment, location, domain (Optional), name, resource_type and instance_number.",
+				ElementType: types.StringType,
 			},
 		},
 		Return: function.StringReturn{},
@@ -47,8 +37,11 @@ func (f *resourceNameFunction) Definition(ctx context.Context, req function.Defi
 }
 
 func (f *resourceNameFunction) Run(ctx context.Context, req function.RunRequest, resp *function.RunResponse) {
-	var prefix, name, resourceType string
-	var instance int64
+	// var prefix, name, resourceType string
+	// var instance int64
+
+	var configuration map[string]string
+
 	var result string
 
 	var resourceAbbreviations = map[string]string{
@@ -113,25 +106,79 @@ func (f *resourceNameFunction) Run(ctx context.Context, req function.RunRequest,
 		"resource_group": "rg",
 	}
 
-	resp.Error = function.ConcatFuncErrors(resp.Error, req.Arguments.Get(ctx, &prefix, &name, &resourceType, &instance))
+	resp.Error = function.ConcatFuncErrors(resp.Error, req.Arguments.Get(ctx, &configuration))
 
 	if resp.Error != nil {
 		return
 	}
 
-	// Validate provider Prefix configuration
-	pattern := `^[a-z]{2}-(d|u|p)-(itn|weu)(-[a-z]+)?$`
-	matched, err := regexp.MatchString(pattern, prefix)
-	if err != nil || !matched {
-		fmt.Println("Regex error:", err)
-		resp.Error = function.NewFuncError("prefix must be in the form of 'xx-(d|u|p)-(itn|weu)'")
+	requiredKeys := []string{
+		"prefix",
+		"environment",
+		"location",
+		"name",
+		"resource_type",
+		"instance_number",
+	}
+	optionalKeys := []string{
+		"domain",
+	}
+	allowedKeys := append(requiredKeys, optionalKeys...)
+
+	for _, key := range requiredKeys {
+		if _, exists := configuration[key]; !exists {
+			resp.Error = function.NewFuncError(fmt.Sprintf("Missing key in input. The required key '%s' is missing from the input map.", key))
+			return
+		}
 	}
 
+	for key := range configuration {
+		if !contains(allowedKeys, key) {
+			resp.Error = function.NewFuncError(fmt.Sprintf("Invalid key in input. The key '%s' is not allowed.", key))
+			return
+		}
+	}
+
+	prefix := configuration["prefix"]
+	environment := configuration["environment"]
+	location := configuration["location"]
+	domain := configuration["domain"] // Optional
+	name := configuration["name"]
+	resourceType := configuration["resource_type"]
+	instanceNumberStr := configuration["instance_number"]
+
+	// Validate instance number
+	instance, err := strconv.Atoi(instanceNumberStr)
+	if err != nil {
+		resp.Error = function.NewFuncError("The instance_number must be a valid integer")
+		return
+	}
+
+	// Validate provider Prefix configuration
+	if len(prefix) != 2 {
+		resp.Error = function.NewFuncError("Prefix must be 2 characters long")
+		return
+	}
+
+	// Validate provider Environment configuration
+	if strings.ToLower(environment) != "d" && strings.ToLower(environment) != "u" && strings.ToLower(environment) != "p" {
+		resp.Error = function.NewFuncError("Environment must be 'd', 'u' or 'p'")
+		return
+	}
+
+	// Validate provider Location configuration
+	if strings.ToLower(location) != "weu" && strings.ToLower(location) != "itn" {
+		resp.Error = function.NewFuncError("Location must be 'weu' or 'itn'")
+		return
+	}
+
+	// Validate instance number
 	if instance < 1 || instance > 99 {
 		resp.Error = function.NewFuncError("Instance must be between 1 and 99")
 		return
 	}
 
+	// Validate resource type
 	abbreviation, exists := resourceAbbreviations[resourceType]
 	if !exists {
 		validKeys := make([]string, 0, len(resourceAbbreviations))
@@ -142,31 +189,49 @@ func (f *resourceNameFunction) Run(ctx context.Context, req function.RunRequest,
 		return
 	}
 
+	// Validate resource name
 	if name == "" {
 		resp.Error = function.NewFuncError("Resource name cannot be empty")
 		return
 	}
 
+	// Check if domain is provided
+	if domain != "" {
+		result = fmt.Sprintf("%s-%s-%s-%s",
+			prefix,
+			environment,
+			location,
+			domain)
+	} else {
+		result = fmt.Sprintf("%s-%s-%s",
+			prefix,
+			environment,
+			location)
+	}
+
+	// Generate resource name
 	if strings.Contains(resourceType, "storage_account") {
 		result = strings.ToLower(fmt.Sprintf("%s%s%s%02d",
-			strings.Replace(prefix, "-", "", -1),
+			result,
 			name,
 			abbreviation,
 			instance))
 	} else {
 		result = strings.ToLower(fmt.Sprintf("%s-%s-%s-%02d",
-			prefix,
+			result,
 			name,
 			abbreviation,
 			instance))
 	}
 
-	// Check total length (optional, adjust max length as needed)
-	// Verify if is better here this check or in the specific module
-	// if len(result) > 64 {
-	// 	resp.Error = function.NewFuncError("Generated name exceeds maximum length of 64 characters")
-	// 	return
-	// }
-
 	resp.Error = function.ConcatFuncErrors(resp.Error, resp.Result.Set(ctx, result))
+}
+
+func contains(list []string, target string) bool {
+	for _, item := range list {
+		if item == target {
+			return true
+		}
+	}
+	return false
 }
